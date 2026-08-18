@@ -4,22 +4,28 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: "Server is not configured with an API key yet." });
-    return;
-  }
-
-  const model = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
-  const { messages } = req.body || {};
+  const { messages, provider } = req.body || {};
 
   if (!Array.isArray(messages)) {
     res.status(400).json({ error: "Missing messages array." });
     return;
   }
 
+  // Pick which provider's key/model/endpoint to use based on the frontend's selection
+  const chosen = provider === "2" ? "2" : "1";
+
+  const apiKey = process.env[`PROVIDER_${chosen}_KEY`];
+  const model = process.env[`PROVIDER_${chosen}_MODEL`];
+  const endpoint =
+    process.env[`PROVIDER_${chosen}_ENDPOINT`] || "https://openrouter.ai/api/v1/chat/completions";
+
+  if (!apiKey || !model) {
+    res.status(500).json({ error: `Server is not configured for model ${chosen} yet.` });
+    return;
+  }
+
   try {
-    const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const upstream = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
