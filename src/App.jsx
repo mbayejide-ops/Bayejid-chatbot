@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Terminal, Trash2, Loader2 } from "lucide-react";
+import { Send, Terminal, Trash2, Loader2, ChevronDown } from "lucide-react";
 
 const MONO = "'JetBrains Mono', 'Fira Code', monospace";
 const SANS = "'Inter', system-ui, sans-serif";
@@ -18,7 +18,12 @@ export default function ChatApp() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [provider, setProvider] = useState(() => loadJSON("provider", "1"));
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem("provider", JSON.stringify(provider));
+  }, [provider]);
 
   useEffect(() => {
     localStorage.setItem("messages", JSON.stringify(messages));
@@ -43,6 +48,7 @@ export default function ChatApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+          provider,
         }),
       });
 
@@ -84,9 +90,23 @@ export default function ChatApp() {
           <Terminal size={16} color="#5B8DEF" />
           <span style={styles.brandText}>chatbot</span>
         </div>
-        <button style={styles.iconBtn} onClick={clearChat} aria-label="Clear chat">
-          <Trash2 size={15} />
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={styles.selectWrap}>
+            <select
+              style={styles.select}
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+              aria-label="Choose model"
+            >
+              <option value="1">Model 1</option>
+              <option value="2">Model 2</option>
+            </select>
+            <ChevronDown size={13} style={styles.selectChevron} />
+          </div>
+          <button style={styles.iconBtn} onClick={clearChat} aria-label="Clear chat">
+            <Trash2 size={15} />
+          </button>
+        </div>
       </header>
 
       <div style={styles.log} ref={scrollRef}>
@@ -185,6 +205,26 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
+  },
+  selectWrap: { position: "relative" },
+  select: {
+    background: "#12171D",
+    border: "1px solid #1E252E",
+    borderRadius: 6,
+    color: "#EDEFF2",
+    fontFamily: MONO,
+    fontSize: 12,
+    padding: "7px 26px 7px 10px",
+    appearance: "none",
+    cursor: "pointer",
+  },
+  selectChevron: {
+    position: "absolute",
+    right: 8,
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#5A6472",
+    pointerEvents: "none",
   },
   log: {
     flex: 1,
